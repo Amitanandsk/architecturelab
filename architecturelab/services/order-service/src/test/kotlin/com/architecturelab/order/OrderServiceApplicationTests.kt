@@ -8,7 +8,6 @@ import org.springframework.context.ApplicationContext
 import org.springframework.http.MediaType
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig
 import org.springframework.test.web.reactive.server.WebTestClient.bindToApplicationContext
-import org.springframework.test.web.reactive.server.WebTestClient
 
 @SpringBootTest
 @SpringJUnitConfig
