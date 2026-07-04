@@ -5,7 +5,7 @@ plugins {
 	id("io.spring.dependency-management") version "1.1.7" apply false
 }
 
-group = "com.pe"
+group = "com.architecturelab"
 version = "0.0.1-SNAPSHOT"
 
 repositories {

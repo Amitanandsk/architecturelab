@@ -3,5 +3,9 @@ services:
     build:
       context: .
       dockerfile: services/order-service/Dockerfile
+    container_name: order-service
     ports:
       - "8080:8080"
+    environment:
+      SPRING_APPLICATION_NAME: order-service
+      SERVER_PORT: 8080
