@@ -1,5 +1,6 @@
 package com.architecturelab.order.api
 
+import com.architecturelab.observability.TraceConstants
 import com.architecturelab.order.application.CreateOrderService
 import com.architecturelab.order.model.CreateOrderRequest
 import com.architecturelab.order.model.CreateOrderResponse
@@ -18,7 +19,8 @@ class OrderController(
 
     @PostMapping
     fun createOrder(@RequestBody request: CreateOrderRequest): Mono<ApiResponse<CreateOrderResponse>> {
-        return createOrderService.create(request)
-            .map(::ApiResponse)
+      return  Mono.deferContextual { context ->
+          createOrderService.createOrder(request,context.get(TraceConstants.TRACE_ID_HEADER))
+      }.map(::ApiResponse)
     }
 }
