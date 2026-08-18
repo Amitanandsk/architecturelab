@@ -29,7 +29,6 @@ class CreateOrderService {
 
 
     fun createOrder(request: CreateOrderRequest): Mono<CreateOrderResponse> {
-        val traceId = ReactorTraceContext.currentTraceId()
         return validateRequest(request)
             .flatMap { validRequest ->
                 persistOrder(validRequest)

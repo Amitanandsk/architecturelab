@@ -1,6 +1,5 @@
 package com.architecturelab.order.api
 
-import com.architecturelab.observability.TraceConstants
 import com.architecturelab.order.application.CreateOrderService
 import com.architecturelab.order.model.CreateOrderRequest
 import com.architecturelab.order.model.CreateOrderResponse
@@ -19,11 +18,10 @@ class OrderController(
 ) {
 
     @PostMapping
-fun createOrder(@RequestBody request: CreateOrderRequest,exchange: ServerWebExchange): Mono<ApiResponse<CreateOrderResponse>> {
+fun createOrder(@RequestBody request: CreateOrderRequest): Mono<ApiResponse<CreateOrderResponse>> {
        /* val traceId =
             exchange.attributes[TraceConstants.TRACE_ID] as String*/
-    return  Mono.deferContextual { context ->
-        createOrderService.createOrder(request)
-    }.map(::ApiResponse)
+    return createOrderService.createOrder(request)
+    .map(::ApiResponse)
 }
 }
