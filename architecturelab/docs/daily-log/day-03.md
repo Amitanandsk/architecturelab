@@ -19,24 +19,43 @@ Improve resilience in `order-service` by localizing retry to the unstable invent
 ## Current Retry Configuration
 
 ```kotlin
-.retryWhen(
-    Retry.backoff(2, Duration.ofMillis(100))
-        .filter { error -> error is RuntimeException }
-        .doAfterRetry {
-            log.info(
-                "event=order_retry service=order-service attempt={} reason={} traceId={}",
-                it.totalRetries() + 1,
-                it.failure().javaClass.simpleName,
-                traceId
-            )
+Mono.delay(Duration.ofMillis(200))
+    .flatMap {
+        when {
+            savedOrder.sku == "FAIL-INVENTORY" ->
+                Mono.error(RuntimeException("Inventory service failed"))
+            else -> Mono.just(savedOrder)
         }
-)
+    }
+    .retryWhen(
+        Retry.backoff(2, Duration.ofMillis(100))
+            .filter { error -> error is RuntimeException }
+            .doAfterRetry {
+                log.info(
+                    "event=order_retry service=order-service attempt={} reason={} traceId={}",
+                    it.totalRetries() + 1,
+                    it.failure().javaClass.simpleName,
+                    traceId
+                )
+            }
+    )
 ```
 
 ## Current Timeout
 
 ```kotlin
-.timeout(Duration.ofMillis(1200))
+validateRequest(request, traceId)
+    .flatMap { validRequest -> persistOrder(validRequest, traceId) }
+    .flatMap { savedOrder -> checkInventory(savedOrder, traceId) }
+    .map { savedOrder ->
+        CreateOrderResponse(
+            orderId = savedOrder.orderId,
+            status = "CREATED",
+            sku = savedOrder.sku,
+            quantity = savedOrder.quantity
+        )
+    }
+    .timeout(Duration.ofMillis(1200))
 ```
 
 The timeout was initially 400 ms. It fired before the complete retry sequence could finish, so it was temporarily increased to 1200 ms to observe retry exhaustion clearly.
