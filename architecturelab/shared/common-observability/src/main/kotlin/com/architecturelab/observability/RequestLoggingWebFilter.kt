@@ -23,13 +23,10 @@ class RequestLoggingWebFilter(
 
         exchange.response.headers.add(TraceConstants.TRACE_ID_HEADER, traceId)
         exchange.attributes[TraceConstants.TRACE_ID] = traceId
+        logger.info("event={} service={} method={} path={} traceId={}","request_started", serviceName,exchange.request.method, exchange.request.path, traceId)
 
         return chain.filter(exchange)
-            .contextWrite { context -> context.put(TraceConstants.TRACE_ID_HEADER,traceId) }
-        .doFirst {
-                MDC.put(TraceConstants.TRACE_ID, traceId)
-                logger.info("event={} service={} method={} path={} traceId={}","request_started", serviceName,exchange.request.method, exchange.request.path, traceId)
-            }
+            .contextWrite { context -> context.put(TraceConstants.TRACE_ID,traceId) }
             .doFinally {
 
 
@@ -46,7 +43,6 @@ class RequestLoggingWebFilter(
                     latencyMs,
                     traceId
                 )
-                MDC.remove(TraceConstants.TRACE_ID)
             }
     }
 }

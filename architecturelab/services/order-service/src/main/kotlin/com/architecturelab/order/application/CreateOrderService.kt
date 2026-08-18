@@ -1,5 +1,6 @@
 package com.architecturelab.order.application
 
+import com.architecturelab.observability.ReactorTraceContext
 import com.architecturelab.order.common.helper.measureStep
 import com.architecturelab.order.model.CreateOrderRequest
 import com.architecturelab.order.model.CreateOrderResponse
@@ -27,13 +28,14 @@ class CreateOrderService {
     }*/
 
 
-    fun createOrder(request: CreateOrderRequest, traceId: String): Mono<CreateOrderResponse> {
-        return validateRequest(request, traceId)
+    fun createOrder(request: CreateOrderRequest): Mono<CreateOrderResponse> {
+        val traceId = ReactorTraceContext.currentTraceId()
+        return validateRequest(request)
             .flatMap { validRequest ->
-                persistOrder(validRequest, traceId)
+                persistOrder(validRequest)
             }
             .flatMap { savedOrder ->
-                checkInventory(savedOrder, traceId)
+                checkInventory(savedOrder)
             }
             .map { savedOrder ->
                 CreateOrderResponse(
@@ -46,29 +48,30 @@ class CreateOrderService {
             .timeout(Duration.ofMillis(10000))
 
             .onErrorResume { error ->
-                log.warn(
-                    "event=order_creation_failed service=order-service error={} traceId={}",
-                    error.javaClass.simpleName,
-                    traceId
-                )
-
-                Mono.just(
-                    CreateOrderResponse(
-                        orderId = UUID.randomUUID().toString(),
-                        status = "FAILED",
-                        sku = request.sku,
-                        quantity = request.quantity
+                ReactorTraceContext.currentTraceId()
+                    .flatMap { traceId ->
+                        log.warn(
+                        "event=order_creation_failed service=order-service error={} traceId={}",
+                        error.javaClass.simpleName,
+                        traceId
                     )
-                )
+                        Mono.just(
+                            CreateOrderResponse(
+                                orderId = UUID.randomUUID().toString(),
+                                status = "FAILED",
+                                sku = request.sku,
+                                quantity = request.quantity
+                            )
+                        )
+                    }
             }
     }
 
 
     private fun validateRequest(
-    request: CreateOrderRequest,
-    traceId: String
+    request: CreateOrderRequest
 ): Mono<CreateOrderRequest> {
-    return measureStep("validate_request", traceId) {
+    return measureStep("validate_request") {
         if (request.quantity <= 0) {
             Mono.error(IllegalArgumentException("Quantity must be greater than zero"))
         } else {
@@ -80,57 +83,60 @@ class CreateOrderService {
 
 
     private fun persistOrder(
-        request: CreateOrderRequest,
-        traceId: String
+        request: CreateOrderRequest
     ): Mono<SavedOrder> {
-        return measureStep("persist_order", traceId) {
-            Mono.delay(Duration.ofMillis(100))
-                .map {
-                    SavedOrder(
-                        orderId = UUID.randomUUID().toString(),
-                        sku = request.sku,
-                        quantity = request.quantity
-                    )
+               return measureStep("persist_order") {
+                    Mono.delay(Duration.ofMillis(100))
+                        .map {
+                            SavedOrder(
+                                orderId = UUID.randomUUID().toString(),
+                                sku = request.sku,
+                                quantity = request.quantity
+                            )
+                        }
                 }
-        }
     }
 
 
     private fun checkInventory(
-        savedOrder: SavedOrder,
-        traceId: String
+        savedOrder: SavedOrder
     ): Mono<SavedOrder> {
-        return measureStep("inventory_check", traceId) {
-            Mono.delay(Duration.ofMillis(200))
-                .flatMap {
-                    val random = Math.random()
-                    when {
-                        savedOrder.sku == "FAIL-INVENTORY" -> {
-                            Mono.error(RuntimeException("Inventory service failed"))
-                        }
+        return ReactorTraceContext.currentTraceId()
+            .flatMap { traceId ->
+                measureStep("inventory_check") {
+                    Mono.delay(Duration.ofMillis(200))
+                        .flatMap {
+                            val random = Math.random()
+                            when {
+                                savedOrder.sku == "FAIL-INVENTORY" -> {
+                                    Mono.error(RuntimeException("Inventory service failed"))
+                                }
 
-                        random < 0.6 -> {
-                            Mono.error(RuntimeException("Inventory service failed"))
-                        }
+                                random < 0.6 -> {
+                                    Mono.error(RuntimeException("Inventory service failed"))
+                                }
 
-                        else -> {
-                            Mono.just(savedOrder)
+                                else -> {
+                                    Mono.just(savedOrder)
+                                }
+                            }
                         }
-                    }
+                        .retryWhen(
+
+                            Retry.backoff(2, Duration.ofMillis(100))
+                                .filter { error -> error is RuntimeException }
+                                .doAfterRetry {
+                                    log.info(
+                                        "event=order_retry service=order-service attempt={} reason={} traceId={}",
+                                        it.totalRetries() + 1,
+                                        it.failure().javaClass.simpleName,
+                                        traceId
+                                    )
+                                }
+                        )
                 }
-                .retryWhen(
-
-                    Retry.backoff(2, Duration.ofMillis(100))
-                        .filter { error -> error is RuntimeException }
-                        .doAfterRetry {
-                            log.info("event=order_retry service=order-service attempt={} reason={} traceId={}",
-                                it.totalRetries()+1,
-                                it.failure().javaClass.simpleName,
-                                traceId) }
-                )
-        }
+            }
     }
-
 
 
 }

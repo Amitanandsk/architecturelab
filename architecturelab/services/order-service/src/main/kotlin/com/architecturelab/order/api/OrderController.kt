@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.server.ServerWebExchange
 import reactor.core.publisher.Mono
 
 @RestController
@@ -18,9 +19,11 @@ class OrderController(
 ) {
 
     @PostMapping
-    fun createOrder(@RequestBody request: CreateOrderRequest): Mono<ApiResponse<CreateOrderResponse>> {
-      return  Mono.deferContextual { context ->
-          createOrderService.createOrder(request,context.get(TraceConstants.TRACE_ID_HEADER))
-      }.map(::ApiResponse)
-    }
+fun createOrder(@RequestBody request: CreateOrderRequest,exchange: ServerWebExchange): Mono<ApiResponse<CreateOrderResponse>> {
+       /* val traceId =
+            exchange.attributes[TraceConstants.TRACE_ID] as String*/
+    return  Mono.deferContextual { context ->
+        createOrderService.createOrder(request)
+    }.map(::ApiResponse)
+}
 }
