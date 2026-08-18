@@ -43,13 +43,8 @@ class CreateOrderService {
                     quantity = savedOrder.quantity
                 )
             }
-            .timeout(Duration.ofMillis(800))
-            .retryWhen(
+            .timeout(Duration.ofMillis(10000))
 
-                Retry.backoff(2, Duration.ofMillis(100))
-                    .filter { error -> error is RuntimeException }
-                    .doAfterRetry {  log.info("event=order_retry service=order-service attempt={} reason={} traceId={}",it.totalRetries(),it.failure().javaClass.simpleName, traceId) }
-            )
             .onErrorResume { error ->
                 log.warn(
                     "event=order_creation_failed service=order-service error={} traceId={}",
@@ -109,13 +104,30 @@ class CreateOrderService {
             Mono.delay(Duration.ofMillis(200))
                 .flatMap {
                     val random = Math.random()
-                    println("random = $random")
-                    if (random < 0.6) {
-                        Mono.error(RuntimeException("Inventory service failed"))
-                    } else {
-                        Mono.just(savedOrder)
+                    when {
+                        savedOrder.sku == "FAIL-INVENTORY" -> {
+                            Mono.error(RuntimeException("Inventory service failed"))
+                        }
+
+                        random < 0.6 -> {
+                            Mono.error(RuntimeException("Inventory service failed"))
+                        }
+
+                        else -> {
+                            Mono.just(savedOrder)
+                        }
                     }
                 }
+                .retryWhen(
+
+                    Retry.backoff(2, Duration.ofMillis(100))
+                        .filter { error -> error is RuntimeException }
+                        .doAfterRetry {
+                            log.info("event=order_retry service=order-service attempt={} reason={} traceId={}",
+                                it.totalRetries()+1,
+                                it.failure().javaClass.simpleName,
+                                traceId) }
+                )
         }
     }
 
