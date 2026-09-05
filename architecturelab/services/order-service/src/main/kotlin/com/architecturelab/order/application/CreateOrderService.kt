@@ -2,6 +2,8 @@ package com.architecturelab.order.application
 
 import com.architecturelab.observability.ReactorTraceContext
 import com.architecturelab.order.common.helper.measureStep
+import com.architecturelab.order.exception.InventoryUnavailableException
+import com.architecturelab.order.exception.OrderValidationException
 import com.architecturelab.order.model.CreateOrderRequest
 import com.architecturelab.order.model.CreateOrderResponse
 import com.architecturelab.order.model.SavedOrder
@@ -54,14 +56,7 @@ class CreateOrderService {
                         error.javaClass.simpleName,
                         traceId
                     )
-                        Mono.just(
-                            CreateOrderResponse(
-                                orderId = UUID.randomUUID().toString(),
-                                status = "FAILED",
-                                sku = request.sku,
-                                quantity = request.quantity
-                            )
-                        )
+                        Mono.error(error)
                     }
             }
     }
@@ -72,7 +67,7 @@ class CreateOrderService {
 ): Mono<CreateOrderRequest> {
     return measureStep("validate_request") {
         if (request.quantity <= 0) {
-            Mono.error(IllegalArgumentException("Quantity must be greater than zero"))
+            Mono.error(OrderValidationException("Quantity must be greater than zero"))
         } else {
             Mono.just(request)
         }
@@ -108,11 +103,11 @@ class CreateOrderService {
                             val random = Math.random()
                             when {
                                 savedOrder.sku == "FAIL-INVENTORY" -> {
-                                    Mono.error(RuntimeException("Inventory service failed"))
+                                    Mono.error(InventoryUnavailableException())
                                 }
 
                                 random < 0.6 -> {
-                                    Mono.error(RuntimeException("Inventory service failed"))
+                                    Mono.error(InventoryUnavailableException())
                                 }
 
                                 else -> {
@@ -123,7 +118,7 @@ class CreateOrderService {
                         .retryWhen(
 
                             Retry.backoff(2, Duration.ofMillis(100))
-                                .filter { error -> error is RuntimeException }
+                                .filter { error -> error is InventoryUnavailableException }
                                 .doAfterRetry {
                                     log.info(
                                         "event=order_retry service=order-service attempt={} reason={} traceId={}",
@@ -132,6 +127,7 @@ class CreateOrderService {
                                         traceId
                                     )
                                 }
+                                .onRetryExhaustedThrow { _, retrySignal  ->  retrySignal .failure()}
                         )
                 }
             }
