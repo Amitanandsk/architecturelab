@@ -1,7 +1,7 @@
 package com.architecturelab.order.application
 
 import com.architecturelab.observability.ReactorTraceContext
-import com.architecturelab.order.common.helper.measureStep
+import com.architecturelab.order.common.helper.StepMeasurement
 import com.architecturelab.order.exception.InventoryUnavailableException
 import com.architecturelab.order.exception.OrderValidationException
 import com.architecturelab.order.model.CreateOrderRequest
@@ -15,7 +15,7 @@ import java.time.Duration
 import java.util.UUID
 
 @Service
-class CreateOrderService {
+class CreateOrderService(val stepMeasurement: StepMeasurement) {
     val log = LoggerFactory.getLogger(this::class.java)
 
     /*fun create(request: CreateOrderRequest): Mono<CreateOrderResponse> {
@@ -65,7 +65,7 @@ class CreateOrderService {
     private fun validateRequest(
     request: CreateOrderRequest
 ): Mono<CreateOrderRequest> {
-    return measureStep("validate_request") {
+    return stepMeasurement.measureStep("validate_request") {
         if (request.quantity <= 0) {
             Mono.error(OrderValidationException("Quantity must be greater than zero"))
         } else {
@@ -79,7 +79,7 @@ class CreateOrderService {
     private fun persistOrder(
         request: CreateOrderRequest
     ): Mono<SavedOrder> {
-               return measureStep("persist_order") {
+               return stepMeasurement.measureStep("persist_order") {
                     Mono.delay(Duration.ofMillis(100))
                         .map {
                             SavedOrder(
@@ -97,7 +97,7 @@ class CreateOrderService {
     ): Mono<SavedOrder> {
         return ReactorTraceContext.currentTraceId()
             .flatMap { traceId ->
-                measureStep("inventory_check") {
+               stepMeasurement.measureStep("inventory_check") {
                     Mono.delay(Duration.ofMillis(200))
                         .flatMap {
                             val random = Math.random()
