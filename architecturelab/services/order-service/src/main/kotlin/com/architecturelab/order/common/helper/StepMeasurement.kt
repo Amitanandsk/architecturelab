@@ -4,6 +4,7 @@ import com.architecturelab.observability.ReactorTraceContext
 import com.architecturelab.order.exception.ApplicationException
 import org.slf4j.LoggerFactory
 import reactor.core.publisher.Mono
+import java.util.concurrent.atomic.AtomicBoolean
 
 class StepMeasurement( private val serviceName : String){
 
@@ -17,40 +18,61 @@ class StepMeasurement( private val serviceName : String){
                .flatMap { traceId ->
                    Mono.defer {
                        val start = System.nanoTime()
-
+                       val terminalLogged = AtomicBoolean(false)
                        action()
                            .doOnSuccess {
-                               val latencyMs = (System.nanoTime() - start) / 1_000_000
-                               logger.info(
-                                   "event=step_completed service={} step={} outcome=success latencyMs={} traceId={}",
-                                   serviceName,
-                                   stepName,
-                                   latencyMs,
-                                   traceId
-                               )
+
+                               if (terminalLogged.compareAndSet(false, true)) {
+                                   val latencyMs = (System.nanoTime() - start) / 1_000_000
+                                   logger.info(
+                                       "event=step_completed service={} step={} outcome=success latencyMs={} traceId={}",
+                                       serviceName,
+                                       stepName,
+                                       latencyMs,
+                                       traceId
+                                   )
+                               }
                            }
                            .doOnError { error ->
-                               val latencyMs = (System.nanoTime() - start) / 1_000_000
+                               if (terminalLogged.compareAndSet(false, true)) {
+                                   val latencyMs = (System.nanoTime() - start) / 1_000_000
 
-                               val applicationError =
-                                   error as? ApplicationException
+                                   val applicationError =
+                                       error as? ApplicationException
 
-                               logger.warn(
-                                   "event=step_failed service={} step={} outcome=error errorCode={} errorType={} retryable={} latencyMs={} traceId={}",
-                                   serviceName,
-                                   stepName,
-                                   applicationError?.errorCode
-                                       ?: "UNCLASSIFIED_ERROR",
-                                   error.javaClass.simpleName
-                                       ?: "",
-                                   applicationError?.retryable
-                                       ?: false,
+                                   logger.warn(
+                                       "event=step_failed service={} step={} outcome=error errorCode={} errorType={} retryable={} latencyMs={} traceId={}",
+                                       serviceName,
+                                       stepName,
+                                       applicationError?.errorCode
+                                           ?: "UNCLASSIFIED_ERROR",
+                                       error.javaClass.simpleName
+                                           ?: "",
+                                       applicationError?.retryable
+                                           ?: false,
 
-                                   latencyMs,
-                                   traceId
-                               )
+                                       latencyMs,
+                                       traceId
+                                   )
+                               }
+                           }
+                           .doOnCancel {
+                               if (terminalLogged.compareAndSet(false, true)) {
+                                   val latencyMs =
+                                       (System.nanoTime() - start) / 1_000_000
+
+                                   logger.warn(
+                                       "event=step_cancelled service={} step={} outcome=cancelled latencyMs={} traceId={}",
+                                       serviceName,
+                                       stepName,
+                                       latencyMs,
+                                       traceId
+                                   )
+                               }
                            }
                    }
+
+
                }
        }
 
