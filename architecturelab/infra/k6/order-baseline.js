@@ -5,7 +5,7 @@ export const options = {
 
     // Fixed concurrency:
     // 10 virtual users continuously execute requests for 30 seconds.
-    vus: 10,
+    vus: 100,
     duration: '30s',
 
     // Make p99 visible in the final console summary.

@@ -10,7 +10,7 @@
 **Test Tool:** k6  
 **Load:** 10 Virtual Users  
 **Duration:** 30 seconds  
-**Code Commit:** `<add git rev-parse --short HEAD output>`
+**Code Commit:** `aa859e7f`
 
 ---
 
