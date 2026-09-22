@@ -96,6 +96,18 @@ class CreateOrderService(val stepMeasurement: StepMeasurement) {
     request: CreateOrderRequest
 ): Mono<CreateOrderRequest> {
     return stepMeasurement.measureStep("validate_request") {
+
+        if (request.sku == "BLOCKING-EVENT-LOOP") {
+
+            log.warn(
+                "event=blocking_operation " +
+                        "operation=validation " +
+                        "thread={}",
+                Thread.currentThread().name
+            )
+
+            Thread.sleep(200)
+        }
         if (request.quantity <= 0) {
             Mono.error(OrderValidationException("Quantity must be greater than zero"))
         } else {
