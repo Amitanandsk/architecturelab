@@ -35,7 +35,7 @@ const BASE_URL =
 export default function () {
 
     const payload = JSON.stringify({
-        sku: 'BLOCKING-EVENT-LOOP',
+        sku: 'NONBLOCKING-DELAY',
         quantity: 1,
     });
 

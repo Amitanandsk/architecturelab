@@ -15,6 +15,7 @@ import com.architecturelab.order.model.SavedOrder
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Mono
+import reactor.core.scheduler.Schedulers
 import reactor.util.retry.Retry
 import java.time.Duration
 import java.util.UUID
@@ -93,29 +94,62 @@ class CreateOrderService(val stepMeasurement: StepMeasurement) {
 
 
     private fun validateRequest(
-    request: CreateOrderRequest
-): Mono<CreateOrderRequest> {
-    return stepMeasurement.measureStep("validate_request") {
+        request: CreateOrderRequest
+    ): Mono<CreateOrderRequest> {
 
-        if (request.sku == "BLOCKING-EVENT-LOOP") {
+        return stepMeasurement.measureStep("validate_request") {
 
-            log.warn(
-                "event=blocking_operation " +
-                        "operation=validation " +
-                        "thread={}",
-                Thread.currentThread().name
-            )
+            when (request.sku) {
 
-            Thread.sleep(200)
-        }
-        if (request.quantity <= 0) {
-            Mono.error(OrderValidationException("Quantity must be greater than zero"))
-        } else {
-            Mono.just(request)
+                "BLOCKING-EVENT-LOOP" -> {
+
+                    Mono.fromCallable {
+
+                        log.warn(
+                            "event=blocking_operation operation=validation thread={}",
+                            Thread.currentThread().name
+                        )
+
+                        Thread.sleep(200)
+
+                        request
+                    }
+                }
+
+                "NONBLOCKING-DELAY" ->
+                    Mono.delay(Duration.ofMillis(200))
+                        .thenReturn(request)
+
+                "BLOCKING-ISOLATED" -> {
+
+                    Mono.fromCallable {
+
+                        log.warn(
+                            "event=blocking_operation_isolated operation=validation thread={}",
+                            Thread.currentThread().name
+                        )
+
+                        Thread.sleep(200)
+
+                        request
+                    }
+                        .subscribeOn(Schedulers.boundedElastic())
+                }
+
+                else -> {
+                    if (request.quantity <= 0) {
+                        Mono.error(
+                            OrderValidationException(
+                                "Quantity must be greater than zero"
+                            )
+                        )
+                    } else {
+                        Mono.just(request)
+                    }
+                }
+            }
         }
     }
-}
-
 
 
     private fun persistOrder(
