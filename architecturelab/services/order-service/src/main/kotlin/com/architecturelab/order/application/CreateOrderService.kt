@@ -100,6 +100,37 @@ class CreateOrderService(val stepMeasurement: StepMeasurement) {
         return stepMeasurement.measureStep("validate_request") {
 
             when (request.sku) {
+                "SCHEDULER-TEST" ->
+                    Mono.fromCallable {
+
+                        log.info(
+                            "event=scheduler_test stage=source thread={}",
+                            Thread.currentThread().name
+                        )
+
+                        request
+                    }
+                        .subscribeOn(Schedulers.boundedElastic())
+
+                        .map {
+                            log.info(
+                                "event=scheduler_test stage=before_publishOn thread={}",
+                                Thread.currentThread().name
+                            )
+
+                            it
+                        }
+
+                        .publishOn(Schedulers.parallel())
+
+                        .map {
+                            log.info(
+                                "event=scheduler_test stage=after_publishOn thread={}",
+                                Thread.currentThread().name
+                            )
+
+                            it
+                        }
 
                 "BLOCKING-EVENT-LOOP" -> {
 
