@@ -14,18 +14,25 @@ java {
 dependencies {
 	implementation(project(":shared:common-observability"))
 	implementation(project(":shared:common-web"))
-	implementation("org.springframework.boot:spring-boot-starter-data-mongodb-reactive")
+//mplementation("org.springframework.boot:spring-boot-starter-data-mongodb-reactive")
 	implementation("org.springframework.boot:spring-boot-starter-webflux")
 	implementation("io.projectreactor.kotlin:reactor-kotlin-extensions")
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 	implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
 	implementation("tools.jackson.module:jackson-module-kotlin")
+	implementation("org.springframework.boot:spring-boot-starter-data-r2dbc")
+	// Flyway schema migrations
+	implementation("org.springframework.boot:spring-boot-starter-flyway")
+	implementation("org.flywaydb:flyway-database-postgresql")
 
 	testImplementation("org.springframework.boot:spring-boot-starter-data-mongodb-reactive-test")
 	testImplementation("org.springframework.boot:spring-boot-starter-webflux-test")
 	testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
 	testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+	runtimeOnly("org.postgresql:r2dbc-postgresql")
+	// Flyway uses JDBC to run migrations.
+	runtimeOnly("org.postgresql:postgresql")
 }
 
 kotlin {

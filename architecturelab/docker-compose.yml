@@ -1,11 +1,60 @@
 services:
+
   order-service:
     build:
       context: .
       dockerfile: services/order-service/Dockerfile
+
     container_name: order-service
+
     ports:
       - "8080:8080"
+
     environment:
       SPRING_APPLICATION_NAME: order-service
       SERVER_PORT: 8080
+
+      # Runtime database access - R2DBC
+      SPRING_R2DBC_URL: r2dbc:postgresql://postgres:5432/architecture_lab
+      SPRING_R2DBC_USERNAME: architecture_user
+      SPRING_R2DBC_PASSWORD: architecture_password
+
+      # Flyway migration - JDBC
+      SPRING_FLYWAY_URL: jdbc:postgresql://postgres:5432/architecture_lab
+      SPRING_FLYWAY_USER: architecture_user
+      SPRING_FLYWAY_PASSWORD: architecture_password
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+
+  postgres:
+    image: postgres:17-alpine
+
+    container_name: architecturelab-postgres
+
+    environment:
+      POSTGRES_DB: architecture_lab
+      POSTGRES_USER: architecture_user
+      POSTGRES_PASSWORD: architecture_password
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - architecturelab-postgres-data:/var/lib/postgresql/data
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U architecture_user -d architecture_lab"
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+
+volumes:
+  architecturelab-postgres-data:
