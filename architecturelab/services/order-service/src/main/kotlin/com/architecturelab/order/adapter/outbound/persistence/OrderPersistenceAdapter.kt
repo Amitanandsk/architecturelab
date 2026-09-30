@@ -3,23 +3,25 @@ package com.architecturelab.order.adapter.outbound.persistence
 import com.architecturelab.order.adapter.outbound.persistence.r2dbc.OrderPersistenceEntity
 import com.architecturelab.order.application.port.outbound.OrderRepositoryPort
 import com.architecturelab.order.domain.model.Order
+import org.springframework.data.r2dbc.core.R2dbcEntityTemplate
 import org.springframework.stereotype.Component
 import reactor.core.publisher.Mono
 import java.util.UUID
 
 @Component
 class OrderPersistenceAdapter(
+    private val entityTemplate: R2dbcEntityTemplate,
     private val repository: OrderR2dbcRepository
 ) : OrderRepositoryPort {
 
-    override fun save(
+    override fun create(
         order: Order
     ): Mono<Order> {
 
         val entity = order.toEntity()
 
-        return repository
-            .save(entity)
+        return entityTemplate
+            .insert(entity)
             .map { it.toDomain() }
     }
 

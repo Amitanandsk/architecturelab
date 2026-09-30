@@ -17,3 +17,7 @@ spring:
     url: ${SPRING_FLYWAY_URL:jdbc:postgresql://localhost:5432/architecture_lab}
     user: ${SPRING_FLYWAY_USER:architecture_user}
     password: ${SPRING_FLYWAY_PASSWORD:architecture_password}
+
+logging:
+  level:
+    org.springframework.r2dbc: DEBUG

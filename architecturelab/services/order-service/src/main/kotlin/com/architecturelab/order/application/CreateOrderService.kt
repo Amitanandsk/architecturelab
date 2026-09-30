@@ -205,7 +205,7 @@ class CreateOrderService(
                     updatedAt = now
                 )
 
-            orderRepositoryPort.save(order)
+            orderRepositoryPort.create(order)
         }
     }
 

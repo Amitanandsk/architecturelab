@@ -6,7 +6,7 @@ import java.util.UUID
 
 interface OrderRepositoryPort {
 
-    fun save(order: Order): Mono<Order>
+    fun create(order: Order): Mono<Order>
 
     fun findById(orderId: UUID): Mono<Order>
 }
