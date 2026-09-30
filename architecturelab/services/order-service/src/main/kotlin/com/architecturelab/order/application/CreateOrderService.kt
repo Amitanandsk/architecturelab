@@ -2,6 +2,7 @@ package com.architecturelab.order.application
 
 import com.architecturelab.observability.ReactorTraceContext
 import com.architecturelab.observability.TraceConstants
+import com.architecturelab.order.application.port.outbound.OrderRepositoryPort
 import com.architecturelab.order.common.helper.StepMeasurement
 import com.architecturelab.order.exception.ApplicationException
 import com.architecturelab.order.exception.DependencyTimeoutException
@@ -11,18 +12,21 @@ import com.architecturelab.order.exception.OrderValidationException
 import com.architecturelab.order.exception.UnexpectedApplicationException
 import com.architecturelab.order.model.CreateOrderRequest
 import com.architecturelab.order.model.CreateOrderResponse
-import com.architecturelab.order.model.SavedOrder
+import com.architecturelab.order.domain.model.Order
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Mono
 import reactor.core.scheduler.Schedulers
 import reactor.util.retry.Retry
 import java.time.Duration
+import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.TimeoutException
 
 @Service
-class CreateOrderService(val stepMeasurement: StepMeasurement) {
+class CreateOrderService(
+    val stepMeasurement: StepMeasurement,
+    val orderRepositoryPort: OrderRepositoryPort) {
     val log = LoggerFactory.getLogger(this::class.java)
 
     /*fun create(request: CreateOrderRequest): Mono<CreateOrderResponse> {
@@ -65,7 +69,7 @@ class CreateOrderService(val stepMeasurement: StepMeasurement) {
             }
             .map { savedOrder ->
                 CreateOrderResponse(
-                    orderId = savedOrder.orderId,
+                    orderId = savedOrder.orderId.toString(),
                     status = "CREATED",
                     sku = savedOrder.sku,
                     quantity = savedOrder.quantity
@@ -185,35 +189,35 @@ class CreateOrderService(val stepMeasurement: StepMeasurement) {
 
     private fun persistOrder(
         request: CreateOrderRequest
-    ): Mono<SavedOrder> {
-               return stepMeasurement.measureStep("persist_order") {
+    ): Mono<Order> {
 
-                   val delay =
-                       if (request.sku == "SLOW-ORDER") {
-                           Duration.ofMillis(2500)
-                       } else {
-                           Duration.ofMillis(100)
-                       }
-                    Mono.delay(delay)
-                        .map {
-                            SavedOrder(
-                                orderId = UUID.randomUUID().toString(),
-                                sku = request.sku,
-                                quantity = request.quantity
-                            )
-                        }
-                }
+        return stepMeasurement.measureStep("persist_order") {
+
+            val now = Instant.now()
+
+            val order =
+                Order(
+                    orderId = UUID.randomUUID(),
+                    sku = request.sku,
+                    quantity = request.quantity,
+                    status = "CREATED",
+                    createdAt = now,
+                    updatedAt = now
+                )
+
+            orderRepositoryPort.save(order)
+        }
     }
 
 
     private fun checkInventory(
-        savedOrder: SavedOrder
-    ): Mono<SavedOrder> {
+        order: Order
+    ): Mono<Order> {
         return ReactorTraceContext.currentTraceId()
             .flatMap { traceId ->
                stepMeasurement.measureStep("inventory_check") {
                    val delay =
-                       if (savedOrder.sku == "TIMEOUT-INVENTORY") {
+                       if (order.sku == "TIMEOUT-INVENTORY") {
                            Duration.ofMillis(500)
                        } else {
                            Duration.ofMillis(200)
@@ -223,16 +227,16 @@ class CreateOrderService(val stepMeasurement: StepMeasurement) {
                         .flatMap {
                             val random = Math.random()
                             when {
-                                savedOrder.sku == "FAIL-INVENTORY" -> {
+                                order.sku == "FAIL-INVENTORY" -> {
                                     Mono.error(InventoryUnavailableException())
                                 }
 
-                                savedOrder.sku == "FLAKY-INVENTORY" && random < 0.6 -> {
+                                order.sku == "FLAKY-INVENTORY" && random < 0.6 -> {
                                     Mono.error(InventoryUnavailableException())
                                 }
 
                                 else -> {
-                                    Mono.just(savedOrder)
+                                    Mono.just(order)
                                 }
                             }
                         }
