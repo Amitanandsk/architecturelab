@@ -19,5 +19,10 @@ class OrderRouter(
                 "/orders",
                 orderHandler::createOrder
             )
+
+            GET(
+                "/orders/{orderId}",
+                orderHandler::getOrder
+            )
         }
 }

@@ -10,8 +10,8 @@ import com.architecturelab.order.exception.InventoryUnavailableException
 import com.architecturelab.order.exception.OrderProcessingTimeoutException
 import com.architecturelab.order.exception.OrderValidationException
 import com.architecturelab.order.exception.UnexpectedApplicationException
-import com.architecturelab.order.model.CreateOrderRequest
-import com.architecturelab.order.model.CreateOrderResponse
+import com.architecturelab.order.adapter.inbound.web.request.CreateOrderRequest
+import com.architecturelab.order.adapter.inbound.web.response.CreateOrderResponse
 import com.architecturelab.order.domain.model.Order
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
