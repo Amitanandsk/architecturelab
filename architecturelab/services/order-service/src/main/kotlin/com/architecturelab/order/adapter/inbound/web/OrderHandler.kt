@@ -3,7 +3,6 @@ package com.architecturelab.order.adapter.inbound.web
 import com.architecturelab.order.application.CreateOrderService
 import com.architecturelab.order.adapter.inbound.web.request.CreateOrderRequest
 import com.architecturelab.order.adapter.inbound.web.response.CreateOrderResponse
-import com.architecturelab.order.adapter.inbound.web.response.OrderResponse
 import com.architecturelab.order.adapter.inbound.web.response.OrderResponse.Companion.toResponse
 import com.architecturelab.order.application.GetOrderService
 import com.architecturelab.order.exception.InvalidOrderIdException
@@ -64,17 +63,4 @@ class OrderHandler(
             }
     }
 
-
-    private fun parseOrderId(
-        request: ServerRequest
-    ): UUID {
-
-        return try {
-            UUID.fromString(
-                request.pathVariable("orderId")
-            )
-        } catch (exception: IllegalArgumentException) {
-            throw InvalidOrderIdException()
-        }
-    }
 }
