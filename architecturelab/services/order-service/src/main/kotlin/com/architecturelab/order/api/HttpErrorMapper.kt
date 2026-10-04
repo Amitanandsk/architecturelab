@@ -2,7 +2,9 @@ package com.architecturelab.order.api
 
 import com.architecturelab.order.exception.ApplicationException
 import com.architecturelab.order.exception.DependencyTimeoutException
+import com.architecturelab.order.exception.InvalidOrderIdException
 import com.architecturelab.order.exception.InventoryUnavailableException
+import com.architecturelab.order.exception.OrderNotFoundException
 import com.architecturelab.order.exception.OrderProcessingTimeoutException
 import com.architecturelab.order.exception.OrderValidationException
 import com.architecturelab.order.exception.UnexpectedApplicationException
@@ -43,6 +45,18 @@ object HttpErrorMapper {
             is UnexpectedApplicationException ->
                 HttpError(
                     status = HttpStatus.INTERNAL_SERVER_ERROR,
+                    errorCode = error.errorCode,
+                    message = error.safeMessage
+                )
+            is OrderNotFoundException ->
+                HttpError(
+                    status = HttpStatus.NOT_FOUND,
+                    errorCode = error.errorCode,
+                    message = error.safeMessage
+                )
+            is InvalidOrderIdException ->
+                HttpError(
+                    status = HttpStatus.BAD_REQUEST,
                     errorCode = error.errorCode,
                     message = error.safeMessage
                 )
