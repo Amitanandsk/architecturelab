@@ -1,6 +1,6 @@
 package com.architecturelab.order
 
-import com.architecturelab.order.model.CreateOrderRequest
+import com.architecturelab.order.adapter.inbound.web.request.CreateOrderRequest
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest

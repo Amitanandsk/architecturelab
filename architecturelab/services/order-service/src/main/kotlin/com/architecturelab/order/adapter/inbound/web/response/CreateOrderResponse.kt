@@ -1,4 +1,4 @@
-package com.architecturelab.order.model
+package com.architecturelab.order.adapter.inbound.web.response
 
 data class CreateOrderResponse(
     val orderId: String,
