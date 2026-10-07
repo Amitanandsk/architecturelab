@@ -25,10 +25,15 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-flyway")
 	implementation("org.flywaydb:flyway-database-postgresql")
 
-	testImplementation("org.springframework.boot:spring-boot-starter-data-mongodb-reactive-test")
+
 	testImplementation("org.springframework.boot:spring-boot-starter-webflux-test")
 	testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
 	testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test")
+	testImplementation("org.springframework.boot:spring-boot-starter-test")
+	testImplementation("org.springframework.boot:spring-boot-testcontainers")
+	testImplementation("org.testcontainers:testcontainers-junit-jupiter")
+	testImplementation("org.testcontainers:testcontainers-postgresql")
+
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 	runtimeOnly("org.postgresql:r2dbc-postgresql")
 	// Flyway uses JDBC to run migrations.
