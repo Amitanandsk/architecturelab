@@ -1,25 +1,24 @@
 package com.architecturelab.order.integration.api
 
 import com.architecturelab.order.application.port.outbound.OrderRepositoryPort
+import com.architecturelab.order.integration.support.PostgresTestConfiguration
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection
 import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient
+import org.springframework.context.annotation.Import
 import org.springframework.http.MediaType
 import org.springframework.test.web.reactive.server.WebTestClient
-import org.testcontainers.junit.jupiter.Container
-import org.testcontainers.junit.jupiter.Testcontainers
-import org.testcontainers.postgresql.PostgreSQLContainer
-import java.util.UUID
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNotNull
+import java.util.*
 
-@Testcontainers
+
 @SpringBootTest(
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT
 )
 @AutoConfigureWebTestClient
+@Import(PostgresTestConfiguration::class)
 class OrderApiIntegrationTest {
 
     @Autowired
@@ -27,19 +26,7 @@ class OrderApiIntegrationTest {
     @Autowired
     lateinit var orderRepositoryPort: OrderRepositoryPort
 
-    companion object {
 
-        @Container
-        @ServiceConnection
-        @JvmField
-        val postgres =
-            PostgreSQLContainer(
-                "postgres:17-alpine"
-            )
-                .withDatabaseName("architecture_lab")
-                .withUsername("architecture_user")
-                .withPassword("architecture_password")
-    }
 
     @Test
     fun `should create order and persist it`() {
