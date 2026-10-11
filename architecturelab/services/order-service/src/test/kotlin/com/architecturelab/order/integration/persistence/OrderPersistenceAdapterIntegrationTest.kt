@@ -119,4 +119,34 @@ class OrderPersistenceAdapterIntegrationTest {
             .expectError()
             .verify()
     }
+
+    @Test
+    fun `should reject duplicate order id`() {
+
+        val now = Instant.now()
+
+        val order =
+            Order(
+                orderId = UUID.randomUUID(),
+                sku = "DUPLICATE-TEST",
+                quantity = 2,
+                status = "CREATED",
+                createdAt = now,
+                updatedAt = now
+            )
+
+        StepVerifier
+            .create(
+                orderPersistenceAdapter.create(order)
+            )
+            .expectNextCount(1)
+            .verifyComplete()
+
+        StepVerifier
+            .create(
+                orderPersistenceAdapter.create(order)
+            )
+            .expectError()
+            .verify()
+    }
 }
