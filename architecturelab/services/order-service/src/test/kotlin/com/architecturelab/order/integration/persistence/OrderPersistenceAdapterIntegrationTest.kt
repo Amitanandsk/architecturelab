@@ -83,4 +83,40 @@ class OrderPersistenceAdapterIntegrationTest {
             }
             .verifyComplete()
     }
+
+
+    @Test
+    fun `should return empty when order does not exist`() {
+
+        val unknownOrderId = UUID.randomUUID()
+
+        StepVerifier
+            .create(
+                orderPersistenceAdapter.findById(unknownOrderId)
+            )
+            .verifyComplete()
+    }
+
+    @Test
+    fun `should reject order when quantity violates database constraint`() {
+
+        val now = Instant.now()
+
+        val order =
+            Order(
+                orderId = UUID.randomUUID(),
+                sku = "INVALID-QTY",
+                quantity = 0,
+                status = "CREATED",
+                createdAt = now,
+                updatedAt = now
+            )
+
+        StepVerifier
+            .create(
+                orderPersistenceAdapter.create(order)
+            )
+            .expectError()
+            .verify()
+    }
 }
