@@ -94,6 +94,7 @@ class OrderPersistenceAdapterIntegrationTest {
             .create(
                 orderPersistenceAdapter.findById(unknownOrderId)
             )
+            .expectNextCount(0)
             .verifyComplete()
     }
 
