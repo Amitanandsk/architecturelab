@@ -7,6 +7,7 @@ import com.architecturelab.order.exception.InventoryUnavailableException
 import com.architecturelab.order.exception.OrderAlreadyExistsException
 import com.architecturelab.order.exception.OrderDataIntegrityException
 import com.architecturelab.order.exception.OrderNotFoundException
+import com.architecturelab.order.exception.OrderPersistenceUnavailableException
 import com.architecturelab.order.exception.OrderProcessingTimeoutException
 import com.architecturelab.order.exception.OrderValidationException
 import com.architecturelab.order.exception.UnexpectedApplicationException
@@ -71,6 +72,12 @@ object HttpErrorMapper {
             is OrderDataIntegrityException ->
                 HttpError(
                     status = HttpStatus.INTERNAL_SERVER_ERROR,
+                    errorCode = error.errorCode,
+                    message = error.safeMessage
+                )
+            is OrderPersistenceUnavailableException ->
+                HttpError(
+                    status = HttpStatus.SERVICE_UNAVAILABLE,
                     errorCode = error.errorCode,
                     message = error.safeMessage
                 )

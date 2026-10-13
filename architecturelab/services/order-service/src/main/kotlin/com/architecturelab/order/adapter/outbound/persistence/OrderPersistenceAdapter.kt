@@ -5,6 +5,8 @@ import com.architecturelab.order.application.port.outbound.OrderRepositoryPort
 import com.architecturelab.order.domain.model.Order
 import com.architecturelab.order.exception.OrderAlreadyExistsException
 import com.architecturelab.order.exception.OrderDataIntegrityException
+import com.architecturelab.order.exception.OrderPersistenceUnavailableException
+import org.springframework.dao.DataAccessResourceFailureException
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.dao.DuplicateKeyException
 import org.springframework.data.r2dbc.core.R2dbcEntityTemplate
@@ -40,8 +42,22 @@ class OrderPersistenceAdapter(
         return repository
             .findById(orderId)
             .map { it.toDomain() }
+            .onErrorMap{ error ->
+                translateReadError(error)}
     }
 }
+
+private fun translateReadError(error: Throwable): Throwable =
+  when(error){
+      is DataAccessResourceFailureException ->
+          OrderPersistenceUnavailableException(
+              retryable = true,
+              cause = error
+          )
+      else -> error
+
+  }
+
 
 
 private fun translateCreateError(
@@ -60,10 +76,18 @@ private fun translateCreateError(
             OrderDataIntegrityException(
                 cause = error
             )
+        is DataAccessResourceFailureException ->
+            OrderPersistenceUnavailableException(
+                retryable = false,
+                cause = error
+            )
 
         else ->
             error
     }
+
+
+
 
 private fun Order.toEntity() =
     OrderPersistenceEntity(
