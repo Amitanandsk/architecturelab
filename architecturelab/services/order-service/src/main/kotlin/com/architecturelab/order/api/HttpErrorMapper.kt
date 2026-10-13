@@ -4,6 +4,8 @@ import com.architecturelab.order.exception.ApplicationException
 import com.architecturelab.order.exception.DependencyTimeoutException
 import com.architecturelab.order.exception.InvalidOrderIdException
 import com.architecturelab.order.exception.InventoryUnavailableException
+import com.architecturelab.order.exception.OrderAlreadyExistsException
+import com.architecturelab.order.exception.OrderDataIntegrityException
 import com.architecturelab.order.exception.OrderNotFoundException
 import com.architecturelab.order.exception.OrderProcessingTimeoutException
 import com.architecturelab.order.exception.OrderValidationException
@@ -57,6 +59,18 @@ object HttpErrorMapper {
             is InvalidOrderIdException ->
                 HttpError(
                     status = HttpStatus.BAD_REQUEST,
+                    errorCode = error.errorCode,
+                    message = error.safeMessage
+                )
+            is OrderAlreadyExistsException ->
+                HttpError(
+                    status = HttpStatus.CONFLICT,
+                    errorCode = error.errorCode,
+                    message = error.safeMessage
+                )
+            is OrderDataIntegrityException ->
+                HttpError(
+                    status = HttpStatus.INTERNAL_SERVER_ERROR,
                     errorCode = error.errorCode,
                     message = error.safeMessage
                 )
