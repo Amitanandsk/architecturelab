@@ -44,8 +44,8 @@ class R2dbcPoolSaturationIntegrationTest {
             .map { row, _ ->
                 row.get(
                     "result",
-                    Integer::class.java
-                )!!.toInt()
+                    Int::class.java
+                )!!
             }
             .one()
 

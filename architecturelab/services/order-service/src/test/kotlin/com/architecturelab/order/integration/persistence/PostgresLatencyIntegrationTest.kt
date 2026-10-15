@@ -31,7 +31,7 @@ class PostgresLatencyIntegrationTest{
                 """.trimIndent()
                 )
                 .map { row, _ ->
-                    row.get("result", Integer::class.java) as Int
+                    row.get("result", Int::class.java)  as Int
                 }
                 .one()
 
@@ -53,7 +53,7 @@ class PostgresLatencyIntegrationTest{
                 """.trimIndent()
                 )
                 .map { row, _ ->
-                    row.get("result", Integer::class.java) as Int
+                    row.get("result", Int::class.java) as Int
                 }
                 .one()
                 .timeout(
