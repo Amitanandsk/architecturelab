@@ -54,7 +54,8 @@ class R2dbcPoolSaturationIntegrationTest {
     fun `should fail connection acquisition when pool is saturated`() {
 
         val concurrentQueries =
-            Flux.merge(
+            Flux.mergeDelayError(
+                3,
                 slowQuery(1),
                 slowQuery(2),
                 slowQuery(3)
