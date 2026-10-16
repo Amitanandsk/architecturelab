@@ -5,7 +5,9 @@ import com.architecturelab.order.application.port.outbound.OrderRepositoryPort
 import com.architecturelab.order.domain.model.Order
 import com.architecturelab.order.exception.OrderAlreadyExistsException
 import com.architecturelab.order.exception.OrderDataIntegrityException
+import com.architecturelab.order.exception.OrderPersistenceSaturatedException
 import com.architecturelab.order.exception.OrderPersistenceUnavailableException
+import io.r2dbc.spi.R2dbcTimeoutException
 import org.springframework.dao.DataAccessResourceFailureException
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.dao.DuplicateKeyException
@@ -64,19 +66,26 @@ private fun translateCreateError(
     error: Throwable,
     orderId: UUID
 ): Throwable =
-    when (error) {
+    when {
 
-        is DuplicateKeyException ->
+        error is DuplicateKeyException ->
             OrderAlreadyExistsException(
                 orderId = orderId,
                 cause = error
             )
 
-        is DataIntegrityViolationException ->
+        error is DataIntegrityViolationException ->
             OrderDataIntegrityException(
                 cause = error
             )
-        is DataAccessResourceFailureException ->
+
+        error is DataAccessResourceFailureException &&
+                error.hasR2dbcTimeoutCause() ->
+            OrderPersistenceSaturatedException(
+                cause = error
+            )
+
+        error is DataAccessResourceFailureException ->
             OrderPersistenceUnavailableException(
                 retryable = false,
                 cause = error
@@ -108,3 +117,7 @@ private fun OrderPersistenceEntity.toDomain() =
         createdAt = createdAt,
         updatedAt = updatedAt
     )
+
+private fun Throwable.hasR2dbcTimeoutCause(): Boolean =
+    generateSequence(this) { it.cause }
+        .any { it is R2dbcTimeoutException }
