@@ -57,7 +57,7 @@ class R2dbcPoolSaturationIntegrationTest {
             Mono.usingWhen(
                 twoConnections,
 
-                { connections ->
+                {
 
                     // Both pooled connections are currently checked out.
                     // This call therefore needs a third connection.
