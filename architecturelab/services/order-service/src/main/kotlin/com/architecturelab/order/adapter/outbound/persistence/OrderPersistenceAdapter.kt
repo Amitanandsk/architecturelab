@@ -50,8 +50,14 @@ class OrderPersistenceAdapter(
 }
 
 private fun translateReadError(error: Throwable): Throwable =
-  when(error){
-      is DataAccessResourceFailureException ->
+  when {
+      error is DataAccessResourceFailureException &&
+              error.hasR2dbcTimeoutCause() ->
+          OrderPersistenceSaturatedException(
+              cause = error
+          )
+
+      error is DataAccessResourceFailureException ->
           OrderPersistenceUnavailableException(
               retryable = true,
               cause = error
