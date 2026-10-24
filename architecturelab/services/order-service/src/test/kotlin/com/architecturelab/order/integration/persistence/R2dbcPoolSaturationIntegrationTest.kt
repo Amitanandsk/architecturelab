@@ -42,27 +42,6 @@ class R2dbcPoolSaturationIntegrationTest {
     @Autowired
     lateinit var connectionPool: ConnectionPool
 
-
-    private fun slowQuery(
-        value: Int
-    ): Mono<Int> =
-        databaseClient
-            .sql(
-                """
-            SELECT :value AS result
-            FROM pg_sleep(2)
-            """.trimIndent()
-            )
-            .bind("value", value)
-            .map { row, _ ->
-                row.get(
-                    "result",
-                    Int::class.java
-                )!!
-            }
-            .one()
-
-
     @Test
     fun `should fail connection acquisition when pool is saturated`() {
 
