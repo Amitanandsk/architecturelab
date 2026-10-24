@@ -24,8 +24,7 @@ dependencies {
 	// Flyway schema migrations
 	implementation("org.springframework.boot:spring-boot-starter-flyway")
 	implementation("org.flywaydb:flyway-database-postgresql")
-
-
+	implementation("org.springframework.boot:spring-boot-starter-actuator")
 	testImplementation("org.springframework.boot:spring-boot-starter-webflux-test")
 	testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
 	testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test")
@@ -39,6 +38,7 @@ dependencies {
 	runtimeOnly("org.postgresql:r2dbc-postgresql")
 	// Flyway uses JDBC to run migrations.
 	runtimeOnly("org.postgresql:postgresql")
+	runtimeOnly("io.micrometer:micrometer-registry-prometheus")
 }
 
 kotlin {

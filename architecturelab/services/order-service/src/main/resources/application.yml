@@ -21,3 +21,17 @@ spring:
 logging:
   level:
     org.springframework.r2dbc: DEBUG
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include:
+          - health
+          - info
+          - metrics
+          - prometheus
+
+  metrics:
+    tags:
+      application: ${spring.application.name}
