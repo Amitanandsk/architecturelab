@@ -24,6 +24,10 @@ services:
       SPRING_FLYWAY_USER: architecture_user
       SPRING_FLYWAY_PASSWORD: architecture_password
 
+      SPRING_R2DBC_POOL_INITIAL_SIZE: 2
+      SPRING_R2DBC_POOL_MAX_SIZE: 2
+      SPRING_R2DBC_POOL_MAX_ACQUIRE_TIME: 2s
+
     depends_on:
       postgres:
         condition: service_healthy
