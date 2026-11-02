@@ -75,7 +75,7 @@ class CreateOrderService(
                     quantity = savedOrder.quantity
                 )
             }}
-            .timeout(Duration.ofMillis(2000))
+            .timeout(Duration.ofMillis(5000))
             .onErrorMap(TimeoutException::class.java, {error -> OrderProcessingTimeoutException(error) })
             .onErrorMap({error ->
                 when(error) {
