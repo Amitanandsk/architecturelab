@@ -35,3 +35,7 @@ management:
   metrics:
     tags:
       application: ${spring.application.name}
+
+order:
+  processing:
+    timeout: ${ORDER_PROCESSING_TIMEOUT:1s}

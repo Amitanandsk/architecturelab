@@ -14,6 +14,7 @@ import com.architecturelab.order.adapter.inbound.web.request.CreateOrderRequest
 import com.architecturelab.order.adapter.inbound.web.response.CreateOrderResponse
 import com.architecturelab.order.domain.model.Order
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Mono
 import reactor.core.scheduler.Schedulers
@@ -28,6 +29,8 @@ class CreateOrderService(
     val stepMeasurement: StepMeasurement,
     val orderRepositoryPort: OrderRepositoryPort) {
     val log = LoggerFactory.getLogger(this::class.java)
+          @Value("\${order.processing.timeout}")
+    lateinit var orderProcessingTimeout: Duration
 
     /*fun create(request: CreateOrderRequest): Mono<CreateOrderResponse> {
         return Mono.just(
@@ -75,7 +78,7 @@ class CreateOrderService(
                     quantity = savedOrder.quantity
                 )
             }}
-            .timeout(Duration.ofMillis(5000))
+            .timeout(orderProcessingTimeout)
             .onErrorMap(TimeoutException::class.java, {error -> OrderProcessingTimeoutException(error) })
             .onErrorMap({error ->
                 when(error) {
