@@ -32,9 +32,14 @@ management:
           - metrics
           - prometheus
 
+
   metrics:
     tags:
       application: ${spring.application.name}
+
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
 
 order:
   processing:

@@ -2,6 +2,7 @@ package com.architecturelab.order.api
 
 import com.architecturelab.observability.TraceConstants
 import com.architecturelab.order.exception.ApplicationException
+import com.architecturelab.order.observability.OrderErrorMetrics
 import org.springframework.boot.webflux.error.ErrorWebExceptionHandler
 import org.springframework.core.Ordered
 import org.springframework.http.MediaType
@@ -10,7 +11,8 @@ import reactor.core.publisher.Mono
 import tools.jackson.databind.ObjectMapper
 
 class GlobalErrorWebExceptionHandler(
-    private val objectMapper: ObjectMapper
+    private val objectMapper: ObjectMapper,
+    private val orderErrorMetrics: OrderErrorMetrics
 ) : ErrorWebExceptionHandler, Ordered {
 
     override fun getOrder(): Int =
@@ -33,6 +35,11 @@ class GlobalErrorWebExceptionHandler(
 
         val httpError =
             HttpErrorMapper.map(error)
+
+        orderErrorMetrics.record(
+            errorCode = httpError.errorCode,
+            status = httpError.status
+        )
 
         val traceId =
             exchange.getAttribute<String>(
